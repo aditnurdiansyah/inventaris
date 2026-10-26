@@ -29,7 +29,6 @@
 -   [Dokumentasi](#dokumentasi)
 -   [Workflow Git untuk Tim](#workflow-git-untuk-tim)
 -   [Troubleshooting](#troubleshooting)
--   [Roadmap](#roadmap)
 -   [Kontribusi](#kontribusi)
 -   [Lisensi](#lisensi)
 
