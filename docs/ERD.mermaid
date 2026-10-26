@@ -1,0 +1,63 @@
+erDiagram
+    users ||--o{ stock_ins : "mencatat"
+    users ||--o{ stock_outs : "mencatat"
+    users ||--o{ stock_opnames : "mencatat"
+    suppliers ||--o{ stock_ins : "memasok"
+    items ||--o{ stock_ins : "masuk"
+    items ||--o{ stock_outs : "keluar"
+    items ||--o{ stock_opnames : "diopname"
+
+    users {
+        bigint id PK
+        varchar name
+        varchar email UK
+        varchar password
+        enum role "admin, staff"
+    }
+    items {
+        bigint id PK
+        varchar code UK
+        varchar name
+        varchar category
+        varchar unit
+        decimal buy_price
+        decimal sell_price
+        int stock "CHECK >= 0"
+        int min_stock
+    }
+    suppliers {
+        bigint id PK
+        varchar name
+        varchar phone
+        varchar email
+        text address
+    }
+    stock_ins {
+        bigint id PK
+        bigint item_id FK
+        bigint supplier_id FK
+        bigint user_id FK
+        date date
+        int quantity "CHECK > 0"
+        decimal buy_price
+        varchar note
+    }
+    stock_outs {
+        bigint id PK
+        bigint item_id FK
+        bigint user_id FK
+        date date
+        int quantity "CHECK > 0"
+        enum reason "terjual, rusak, kedaluwarsa, lainnya"
+        varchar note
+    }
+    stock_opnames {
+        bigint id PK
+        bigint item_id FK
+        bigint user_id FK
+        date date
+        int system_stock
+        int physical_stock
+        int difference
+        varchar note
+    }
