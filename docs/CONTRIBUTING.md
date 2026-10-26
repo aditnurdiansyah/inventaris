@@ -77,7 +77,7 @@ refactor/stock-service
 docs/update-readme
 ```
 
-### Alur kerja
+Alur kerja
  
 ```bash
 # 1. Mulai dari main yang terbaru
