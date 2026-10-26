@@ -77,7 +77,31 @@ refactor/stock-service
 docs/update-readme
 ```
 
-Sebelum mulai:
+### Alur kerja
+ 
+```bash
+# 1. Mulai dari main yang terbaru
+git checkout main
+git pull
+ 
+# 2. Buat branch untuk satu fitur atau perbaikan
+git checkout -b feature/barang-masuk
+ 
+# 3. Kerjakan, lalu simpan perubahan dalam commit kecil
+git add .
+git commit -m "feat: validasi jumlah barang masuk"
+ 
+# 4. Kirim branch ke GitHub
+git push -u origin feature/barang-masuk
+ 
+# 5. Buka Pull Request di GitHub (tombol "Compare & pull request")
+```
+ 
+Setelah PR di-merge: hapus branch, lalu `git checkout main && git pull` sebelum memulai pekerjaan berikutnya.
+ 
+**Sebelum `git add .`, selalu jalankan `git status`** dan pastikan tidak ada `.env`, folder `vendor`, atau file pribadi ikut tercatat.
+
+Intinya sebelum mulai:
 
 ```bash
 git checkout main
