@@ -1,381 +1,564 @@
-# PRD: Sistem Manajemen Inventaris Barang
+# Product Requirements Document (PRD)
 
-Mata Kuliah Sistem Basis Data · Proyek Kelompok (5 orang) Versi 1.0 · Oktober 2026
+## 1. Tujuan Dokumen
 
-## 1. Ringkasan Produk
+PRD ini menjadi **sumber acuan produk** bagi seluruh anggota tim selama
+pengembangan InventarisKu.
 
-Sistem Manajemen Inventaris Barang adalah aplikasi web untuk membantu pengelola gudang atau toko mencatat barang masuk, barang keluar, melakukan stok opname, memantau stok yang menipis, dan melihat laporan stok harian maupun bulanan. Aplikasi menggantikan pencatatan manual (buku atau spreadsheet) yang rawan salah hitung dan sulit ditelusuri.
+PRD menjawab pertanyaan:
 
-Aplikasi dibangun dengan Laravel (PHP) dan MySQL, dengan antarmuka HTML, CSS, dan JavaScript. Fokus akademis proyek ini adalah perancangan basis data yang benar: relasi antar tabel, integritas data, transaksi, dan query laporan.
+> **Apa yang harus dibangun, untuk siapa, mengapa, dan seperti apa hasil
+> yang dianggap benar?**
 
-## 2. Latar Belakang dan Masalah
+PRD tidak mengatur detail workflow Git, format commit, proses Pull
+Request, atau pembagian prosedur kerja teknis. Hal tersebut ditempatkan
+pada `CONTRIBUTING.md`.
 
-| Masalah | Dampak |
-| --- | --- |
-| Stok dicatat manual dan terpisah-pisah | Jumlah stok sering tidak cocok dengan kondisi fisik |
-| Tidak ada peringatan stok menipis | Barang kehabisan sebelum sempat dipesan ulang |
-| Riwayat keluar masuk barang sulit dilacak | Sulit mencari penyebab selisih stok |
-| Laporan dibuat manual setiap periode | Memakan waktu dan rawan kesalahan |
+------------------------------------------------------------------------
 
-## 3. Tujuan
+## 2. Ringkasan Produk
 
-**Tujuan produk**
+InventarisKu adalah aplikasi web untuk membantu gudang atau toko
+mengelola data inventaris secara terpusat.
 
-- Stok barang selalu akurat dan diperbarui otomatis setiap ada transaksi.
-- Pengguna dapat mengetahui barang yang perlu dipesan ulang tanpa memeriksa satu per satu.
-- Laporan harian dan bulanan dapat dibuka kapan saja dalam hitungan detik.
+Sistem menggantikan pencatatan stok yang sebelumnya dapat dilakukan
+secara manual melalui buku atau spreadsheet dengan proses digital yang
+lebih terstruktur.
 
-**Tujuan akademik**
+Ruang lingkup inti aplikasi:
 
-- Menerapkan normalisasi (minimal 3NF), primary key, foreign key, dan constraint.
-- Menerapkan transaksi database (`DB::transaction`) agar stok dan riwayat selalu konsisten.
-- Menunjukkan query SQL yang bermakna: JOIN, GROUP BY, agregasi, dan filter tanggal.
+1.  Autentikasi pengguna.
+2.  Pengelolaan barang.
+3.  Pengelolaan pemasok.
+4.  Pencatatan barang masuk.
+5.  Pencatatan barang keluar.
+6.  Stok opname.
+7.  Pemantauan stok menipis.
+8.  Laporan stok harian dan bulanan.
+9.  Dashboard ringkasan operasional.
 
-## 4. Ruang Lingkup
+Konsep utama sistem:
 
-**Termasuk (in scope)**
-
-- Autentikasi pengguna (login dan logout).
-- CRUD data barang dan pemasok.
-- Pencatatan barang masuk dan barang keluar.
-- Stok opname dan penyesuaian stok.
-- Alert stok menipis di dashboard.
-- Laporan stok harian dan bulanan, dapat dicetak atau diekspor.
-
-**Tidak termasuk (out of scope)**
-
-- Modul kasir atau penjualan (POS) dan pembayaran.
-- Integrasi barcode scanner atau perangkat keras.
-- Multi-gudang dan multi-cabang.
-- Aplikasi mobile native.
-- Notifikasi email atau WhatsApp (opsional jika waktu tersisa).
-
-## 5. Pengguna
-
-| Peran | Deskripsi | Hak akses |
-| --- | --- | --- |
-| Admin | Pemilik atau pengelola utama | Semua fitur, termasuk kelola pengguna dan hapus data master |
-| Staf Gudang | Petugas harian | Catat barang masuk dan keluar, stok opname, lihat laporan |
-
-Untuk menjaga proyek tetap realistis, peran cukup dibedakan dengan satu kolom `role` pada tabel `users`.
-
-## 6. Kebutuhan Fungsional
-
-Prioritas: **P0** wajib ada, **P1** sebaiknya ada, **P2** opsional.
-
-### 6.1 Autentikasi
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-01 | Pengguna dapat login dengan email dan password | P0 |
-| FR-02 | Pengguna dapat logout | P0 |
-| FR-03 | Halaman hanya dapat diakses setelah login (middleware auth) | P0 |
-| FR-04 | Admin dapat menambah dan menonaktifkan akun staf | P2 |
-
-### 6.2 Data Barang (items)
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-10 | Menampilkan daftar barang dengan pencarian nama atau kode dan pagination | P0 |
-| FR-11 | Menambah barang: kode, nama, kategori, satuan, harga beli, harga jual, stok minimum | P0 |
-| FR-12 | Mengubah dan menghapus barang (barang yang sudah punya transaksi tidak boleh dihapus) | P0 |
-| FR-13 | Kode barang bersifat unik | P0 |
-| FR-14 | Stok awal diisi saat barang dibuat, selanjutnya hanya berubah lewat transaksi | P0 |
-
-### 6.3 Data Pemasok (suppliers)
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-20 | CRUD pemasok: nama, nomor telepon, alamat, email | P0 |
-| FR-21 | Pemasok yang sudah dipakai di transaksi tidak boleh dihapus | P0 |
-
-### 6.4 Barang Masuk (stock\_ins)
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-30 | Mencatat barang masuk: tanggal, barang, pemasok, jumlah, harga beli, catatan | P0 |
-| FR-31 | Stok barang bertambah otomatis setelah transaksi disimpan | P0 |
-| FR-32 | Jumlah harus lebih dari 0 | P0 |
-| FR-33 | Daftar riwayat barang masuk dengan filter tanggal, barang, dan pemasok | P0 |
-| FR-34 | Membatalkan transaksi masuk (stok dikurangi kembali, dengan validasi stok tidak negatif) | P1 |
-
-### 6.5 Barang Keluar (stock\_outs)
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-40 | Mencatat barang keluar: tanggal, barang, jumlah, alasan (terjual, rusak, kedaluwarsa, lainnya), catatan | P0 |
-| FR-41 | Stok berkurang otomatis setelah transaksi disimpan | P0 |
-| FR-42 | Sistem menolak transaksi jika jumlah melebihi stok tersedia | P0 |
-| FR-43 | Daftar riwayat barang keluar dengan filter | P0 |
-| FR-44 | Membatalkan transaksi keluar (stok dikembalikan) | P1 |
-
-### 6.6 Stok Opname
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-50 | Membuat sesi opname dengan memilih satu atau banyak barang | P0 |
-| FR-51 | Sistem menampilkan stok sistem; pengguna mengisi stok fisik | P0 |
-| FR-52 | Selisih dihitung otomatis (fisik dikurangi sistem) dan ditandai jika tidak nol | P0 |
-| FR-53 | Saat dikonfirmasi, stok barang diperbarui sesuai stok fisik dan selisih tersimpan sebagai riwayat | P0 |
-| FR-54 | Daftar riwayat opname per tanggal | P1 |
-
-### 6.7 Alert Stok Menipis
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-60 | Barang dianggap menipis jika `stock <= min_stock` | P0 |
-| FR-61 | Dashboard menampilkan jumlah dan daftar barang menipis | P0 |
-| FR-62 | Badge jumlah barang menipis pada menu navigasi | P1 |
-| FR-63 | Barang dengan stok 0 ditandai terpisah sebagai "Habis" | P1 |
-
-### 6.8 Laporan
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-70 | Laporan stok harian: stok awal, masuk, keluar, stok akhir per barang pada tanggal yang dipilih | P0 |
-| FR-71 | Laporan stok bulanan: stok awal bulan, total masuk, total keluar, stok akhir per barang | P0 |
-| FR-72 | Filter laporan berdasarkan tanggal atau bulan dan kategori | P0 |
-| FR-73 | Cetak laporan (print stylesheet) atau ekspor PDF/Excel | P1 |
-| FR-74 | Grafik ringkas pergerakan masuk dan keluar di dashboard | P2 |
-
-### 6.9 Dashboard
-
-| ID | Kebutuhan | Prioritas |
-| --- | --- | --- |
-| FR-80 | Ringkasan: total jenis barang, total pemasok, transaksi masuk dan keluar hari ini, barang menipis | P0 |
-| FR-81 | Daftar 5 transaksi terakhir | P1 |
-
-## 7. Kebutuhan Non-Fungsional
-
-| ID | Kategori | Kebutuhan |
-| --- | --- | --- |
-| NFR-01 | Integritas data | Seluruh perubahan stok memakai transaksi database; jika satu langkah gagal, semua dibatalkan |
-| NFR-02 | Keamanan | Password di-hash (bcrypt bawaan Laravel), proteksi CSRF, validasi input di server, query memakai Eloquent atau query builder (anti SQL injection) |
-| NFR-03 | Performa | Halaman daftar dimuat di bawah 2 detik untuk 1.000 barang; gunakan pagination dan index |
-| NFR-04 | Kegunaan | Antarmuka sederhana, konsisten, mudah dipakai tanpa pelatihan |
-| NFR-05 | Responsif | Dapat digunakan di laptop dan tablet |
-| NFR-06 | Kompatibilitas | Chrome, Firefox, dan Edge versi terbaru |
-| NFR-07 | Pemeliharaan | Struktur MVC Laravel, migration dan seeder tersedia agar database dapat dibuat ulang |
-
-## 8. Rancangan Basis Data
-
-Tabel inti dari tugas: `items`, `suppliers`, `stock_ins`, `stock_outs`. Agar fitur login dan stok opname berjalan, ditambahkan dua tabel pendukung: `users` (bawaan Laravel) dan `stock_opnames`.
-
-### 8.1 Relasi Antar Tabel
-
-- `suppliers` 1 — N `stock_ins` (satu pemasok punya banyak transaksi masuk)
-- `items` 1 — N `stock_ins` (satu barang punya banyak transaksi masuk)
-- `items` 1 — N `stock_outs` (satu barang punya banyak transaksi keluar)
-- `items` 1 — N `stock_opnames` (satu barang punya banyak riwayat opname)
-- `users` 1 — N `stock_ins`, `stock_outs`, `stock_opnames` (pencatat transaksi)
-
-### 8.2 Struktur Tabel
-
-**items**
-
-| Kolom | Tipe | Keterangan |
-| --- | --- | --- |
-| id | BIGINT UNSIGNED, PK, AI |  |
-| code | VARCHAR(30) | UNIQUE, kode barang |
-| name | VARCHAR(150) | Nama barang |
-| category | VARCHAR(80) | Kategori |
-| unit | VARCHAR(20) | Satuan (pcs, kg, box, dll.) |
-| buy\_price | DECIMAL(12,2) | Harga beli |
-| sell\_price | DECIMAL(12,2) | Harga jual |
-| stock | INT | Stok saat ini, default 0, tidak boleh negatif |
-| min\_stock | INT | Batas stok menipis, default 5 |
-| created\_at, updated\_at | TIMESTAMP |  |
-
-**suppliers**
-
-| Kolom | Tipe | Keterangan |
-| --- | --- | --- |
-| id | BIGINT UNSIGNED, PK, AI |  |
-| name | VARCHAR(150) | Nama pemasok |
-| phone | VARCHAR(20) | Nullable |
-| email | VARCHAR(100) | Nullable |
-| address | TEXT | Nullable |
-| created\_at, updated\_at | TIMESTAMP |  |
-
-**stock\_ins**
-
-| Kolom | Tipe | Keterangan |
-| --- | --- | --- |
-| id | BIGINT UNSIGNED, PK, AI |  |
-| item\_id | FK ke items.id | ON DELETE RESTRICT |
-| supplier\_id | FK ke suppliers.id | ON DELETE RESTRICT |
-| user\_id | FK ke users.id | Pencatat |
-| date | DATE | Tanggal barang masuk |
-| quantity | INT | Harus lebih dari 0 |
-| buy\_price | DECIMAL(12,2) | Harga beli saat transaksi |
-| note | VARCHAR(255) | Nullable |
-| created\_at, updated\_at | TIMESTAMP |  |
-
-**stock\_outs**
-
-| Kolom | Tipe | Keterangan |
-| --- | --- | --- |
-| id | BIGINT UNSIGNED, PK, AI |  |
-| item\_id | FK ke items.id | ON DELETE RESTRICT |
-| user\_id | FK ke users.id | Pencatat |
-| date | DATE | Tanggal barang keluar |
-| quantity | INT | Harus lebih dari 0 |
-| reason | ENUM('terjual','rusak','kedaluwarsa','lainnya') |  |
-| note | VARCHAR(255) | Nullable |
-| created\_at, updated\_at | TIMESTAMP |  |
-
-**stock\_opnames** (tabel tambahan)
-
-| Kolom | Tipe | Keterangan |
-| --- | --- | --- |
-| id | BIGINT UNSIGNED, PK, AI |  |
-| item\_id | FK ke items.id |  |
-| user\_id | FK ke users.id |  |
-| date | DATE | Tanggal opname |
-| system\_stock | INT | Stok menurut sistem saat opname |
-| physical\_stock | INT | Stok hasil hitung fisik |
-| difference | INT | physical\_stock dikurangi system\_stock |
-| note | VARCHAR(255) | Nullable |
-| created\_at, updated\_at | TIMESTAMP |  |
-
-**users** (bawaan Laravel, ditambah kolom `role` ENUM('admin','staff'))
-
-### 8.3 Index yang Disarankan
-
-- `items.code` (unique), `items.name`, `items.category`
-- `stock_ins.date`, `stock_outs.date`, `stock_opnames.date` (mempercepat laporan)
-- Index pada seluruh foreign key
-
-### 8.4 Aturan Integritas
-
-- Stok tidak boleh negatif (validasi aplikasi dan `CHECK (stock >= 0)` pada MySQL 8).
-- Foreign key memakai `RESTRICT` agar barang dan pemasok yang punya transaksi tidak terhapus.
-- Setiap transaksi masuk, keluar, dan opname dijalankan di dalam `DB::transaction` dengan `lockForUpdate()` pada baris barang untuk mencegah selisih saat akses bersamaan.
-
-## 9. Logika Bisnis Utama
-
-**Barang masuk:** validasi input, lalu dalam satu transaksi: simpan ke `stock_ins`, tambah `items.stock` sebesar `quantity`.
-
-**Barang keluar:** validasi input, kunci baris barang, cek `stock >= quantity`, simpan ke `stock_outs`, kurangi `items.stock`. Jika stok tidak cukup, tampilkan pesan error dan batalkan.
-
-**Stok opname:** simpan `system_stock` dan `physical_stock`, hitung `difference`, lalu set `items.stock = physical_stock`.
-
-**Alert stok menipis:** `SELECT * FROM items WHERE stock <= min_stock ORDER BY stock ASC`.
-
-**Laporan harian** untuk tanggal D:
-
-- Stok akhir = stok saat ini dikurangi seluruh masuk setelah D, ditambah seluruh keluar setelah D, dengan penyesuaian opname setelah D.
-- Stok awal = stok akhir dikurangi masuk pada D, ditambah keluar pada D.
-
-Cara yang lebih sederhana dan disarankan untuk proyek ini: hitung stok awal sebagai hasil akumulasi seluruh transaksi sebelum D, lalu tambahkan masuk dan kurangi keluar pada D. Selisih opname diperlakukan sebagai transaksi penyesuaian. Tim perlu memilih satu pendekatan dan konsisten di seluruh laporan.
-
-**Contoh query laporan bulanan (ringkasan masuk dan keluar):**
-
-```sql
-SELECT i.code, i.name, i.unit,
-       COALESCE(si.total_in, 0)  AS total_masuk,
-       COALESCE(so.total_out, 0) AS total_keluar
-FROM items i
-LEFT JOIN (
-    SELECT item_id, SUM(quantity) AS total_in
-    FROM stock_ins
-    WHERE date BETWEEN :start AND :end
-    GROUP BY item_id
-) si ON si.item_id = i.id
-LEFT JOIN (
-    SELECT item_id, SUM(quantity) AS total_out
-    FROM stock_outs
-    WHERE date BETWEEN :start AND :end
-    GROUP BY item_id
-) so ON so.item_id = i.id
-ORDER BY i.name;
+``` text
+Data Barang
+     │
+     ├── Barang Masuk ──► Stok bertambah
+     │
+     ├── Barang Keluar ─► Stok berkurang
+     │
+     └── Stok Opname ───► Stok disesuaikan
+                              │
+                              ▼
+                         Laporan Stok
 ```
 
-## 10. Daftar Halaman dan Route
+------------------------------------------------------------------------
 
-| Halaman | Route | Keterangan |
-| --- | --- | --- |
-| Login | /login |  |
-| Dashboard | /dashboard | Ringkasan dan alert stok menipis |
-| Barang | /items | Daftar, tambah, ubah, hapus |
-| Pemasok | /suppliers | Daftar, tambah, ubah, hapus |
-| Barang Masuk | /stock-ins | Riwayat dan form tambah |
-| Barang Keluar | /stock-outs | Riwayat dan form tambah |
-| Stok Opname | /stock-opnames | Riwayat dan form opname |
-| Stok Menipis | /low-stock | Daftar lengkap barang menipis |
-| Laporan Harian | /reports/daily |  |
-| Laporan Bulanan | /reports/monthly |  |
+## 3. Latar Belakang dan Masalah
 
-## 11. Alur Pengguna Utama
+Pengelolaan inventaris secara manual memiliki beberapa masalah:
 
-1. **Menerima barang dari pemasok:** Login, buka Barang Masuk, klik Tambah, pilih barang dan pemasok, isi jumlah dan harga, simpan. Stok bertambah otomatis.
-2. **Mengeluarkan barang:** Buka Barang Keluar, klik Tambah, pilih barang, isi jumlah dan alasan, simpan. Jika stok kurang, sistem menolak dengan pesan jelas.
-3. **Opname akhir bulan:** Buka Stok Opname, pilih barang, isi stok fisik, periksa selisih, konfirmasi. Stok sistem disesuaikan.
-4. **Memeriksa stok menipis:** Dashboard menampilkan daftar barang yang perlu dipesan ulang beserta stok dan batas minimumnya.
-5. **Membuat laporan:** Buka Laporan, pilih tanggal atau bulan, lihat tabel, cetak atau ekspor.
+-   stok mudah tidak sesuai dengan kondisi fisik;
+-   pencatatan barang masuk dan keluar tidak terpusat;
+-   sulit mengetahui barang yang perlu segera diisi ulang;
+-   riwayat transaksi sulit ditelusuri;
+-   pembuatan laporan membutuhkan perhitungan manual;
+-   perubahan stok dapat menimbulkan kesalahan jika dilakukan tanpa
+    aturan yang konsisten.
 
-## 12. Arsitektur dan Teknologi
+InventarisKu dikembangkan untuk menyediakan satu sumber data inventaris
+dengan aturan perubahan stok yang terkontrol.
 
-| Lapisan | Teknologi |
-| --- | --- |
-| Frontend | HTML, CSS, JavaScript, Blade template Laravel |
-| Backend | PHP 8.2+, Laravel 11 |
-| Database | MySQL 8 |
-| Autentikasi | Laravel Breeze (versi Blade) atau auth manual |
-| Ekspor (opsional) | barryvdh/laravel-dompdf, maatwebsite/excel |
-| Versi kode | Git dan GitHub (branch per fitur) |
+------------------------------------------------------------------------
 
-Pola MVC: Model (`Item`, `Supplier`, `StockIn`, `StockOut`, `StockOpname`), Controller per modul, dan view Blade dengan satu layout utama.
+## 4. Tujuan Produk
 
-## 13. Kriteria Penerimaan
+### 4.1 Tujuan Utama
 
-- Barang masuk 10 unit menambah stok barang tepat 10 unit.
-- Barang keluar melebihi stok ditolak dan stok tidak berubah.
-- Opname dengan stok fisik berbeda mengubah stok sistem dan menyimpan selisih.
-- Barang dengan stok kurang dari atau sama dengan batas minimum muncul di daftar stok menipis.
-- Laporan bulanan: stok awal + masuk − keluar = stok akhir untuk setiap barang.
-- Barang atau pemasok yang sudah punya transaksi tidak dapat dihapus.
-- Halaman utama tidak dapat dibuka tanpa login.
-- Database dapat dibuat ulang dengan `php artisan migrate --seed`.
+Menyediakan sistem inventaris berbasis web yang sederhana, konsisten,
+dan dapat menjaga integritas data stok.
 
-## 14. Pembagian Tugas (5 Anggota)
+### 4.2 Tujuan Spesifik
 
-| Anggota | Peran | Tanggung jawab |
-| --- | --- | --- |
-| 1 | Ketua / Database | ERD, migration, seeder, query laporan, optimasi index |
-| 2 | Backend A | Autentikasi, CRUD Barang dan Pemasok |
-| 3 | Backend B | Barang Masuk, Barang Keluar, logika transaksi stok |
-| 4 | Backend C / Fitur | Stok Opname, alert stok menipis, laporan harian dan bulanan |
-| 5 | Frontend / QA | Layout, komponen UI sesuai DESIGN.md, dashboard, pengujian, dokumentasi |
+-   Memusatkan data barang dan pemasok.
+-   Mengotomatisasi perubahan stok akibat transaksi.
+-   Menolak transaksi barang keluar yang melebihi stok.
+-   Menyediakan proses stok opname.
+-   Menampilkan peringatan stok menipis.
+-   Menyediakan laporan berdasarkan periode.
+-   Menyediakan migration dan seeder agar database dapat direproduksi.
+-   Menyediakan struktur kode yang mudah dipelihara oleh tim.
 
-Semua anggota ikut menulis laporan dan menyiapkan presentasi bagian masing-masing.
+------------------------------------------------------------------------
 
-## 15. Jadwal (Contoh 6 Minggu)
+## 5. Sasaran Pengguna
 
-| Minggu | Target |
-| --- | --- |
-| 1 | Analisis kebutuhan, ERD, setup Laravel dan repository, layout dasar |
-| 2 | Migration, seeder, autentikasi, CRUD Barang dan Pemasok |
-| 3 | Barang Masuk dan Barang Keluar beserta logika stok |
-| 4 | Stok Opname, alert stok menipis, dashboard |
-| 5 | Laporan harian dan bulanan, cetak atau ekspor, perapihan UI |
-| 6 | Pengujian, perbaikan bug, dokumentasi, laporan akhir, presentasi |
+### 5.1 Admin
 
-## 16. Risiko dan Mitigasi
+Admin bertanggung jawab terhadap pengelolaan operasional dan aksi yang
+berdampak destruktif terhadap data.
 
-| Risiko | Mitigasi |
-| --- | --- |
-| Stok tidak konsisten karena akses bersamaan | `DB::transaction` dan `lockForUpdate()` |
-| Logika laporan harian rumit | Sepakati rumus stok awal di minggu 1 dan tulis di dokumentasi |
-| Konflik kode antar anggota | Branch per fitur, pull request, dan review sebelum merge |
-| Waktu terbatas | Kerjakan seluruh P0 dahulu; P1 dan P2 hanya jika waktu cukup |
-| Data uji kurang | Siapkan seeder berisi 30–50 barang dan transaksi contoh |
+Kebutuhan utama:
 
-## 17. Deliverable Proyek
+-   mengelola data barang dan pemasok;
+-   mengelola transaksi stok;
+-   melakukan stok opname;
+-   memantau stok;
+-   melihat laporan;
+-   membatalkan transaksi;
+-   menghapus data yang memenuhi aturan penghapusan.
 
-- Source code di repository Git.
-- File SQL atau migration dan seeder.
-- ERD dan kamus data.
-- Dokumen PRD ini dan `DESIGN.md`.
-- Laporan proyek dan slide presentasi.
-- Demo aplikasi yang berjalan.
+### 5.2 Staf Gudang
+
+Staf menggunakan aplikasi untuk kegiatan operasional harian.
+
+Kebutuhan utama:
+
+-   mencatat barang masuk;
+-   mencatat barang keluar;
+-   melakukan stok opname;
+-   memantau stok;
+-   melihat laporan;
+-   mengelola data operasional yang diizinkan sistem.
+
+------------------------------------------------------------------------
+
+## 6. Modul Produk
+
+  Modul           Tujuan
+  --------------- ------------------------------------------------
+  Autentikasi     Mengontrol akses ke aplikasi
+  Dashboard       Memberikan ringkasan kondisi inventaris
+  Barang          Mengelola master barang
+  Pemasok         Mengelola master pemasok
+  Barang Masuk    Menambah stok melalui transaksi
+  Barang Keluar   Mengurangi stok melalui transaksi
+  Stok Opname     Menyesuaikan stok sistem dengan stok fisik
+  Stok Menipis    Menampilkan barang yang perlu diperhatikan
+  Laporan         Menyediakan ringkasan stok berdasarkan periode
+
+------------------------------------------------------------------------
+
+## 7. Aturan Bisnis
+
+### BR-01 - Stok tidak boleh negatif
+
+``` text
+stock >= 0
+```
+
+Sistem harus menolak transaksi yang membuat stok menjadi negatif.
+
+### BR-02 - Barang keluar
+
+``` text
+jika quantity > stock:
+    transaksi ditolak
+jika quantity <= stock:
+    transaksi disimpan
+    stock = stock - quantity
+```
+
+### BR-03 - Barang masuk
+
+``` text
+transaksi disimpan
+stock = stock + quantity
+```
+
+### BR-04 - Stok opname
+
+``` text
+difference = physical_stock - system_stock
+stock baru = physical_stock
+```
+
+Riwayat opname tetap menyimpan stok sistem sebelum penyesuaian.
+
+### BR-05 - Status stok
+
+``` text
+stock = 0                 → Habis
+0 < stock <= min_stock    → Menipis
+stock > min_stock         → Aman
+```
+
+### BR-06 - Penghapusan barang
+
+Barang hanya dapat dihapus jika belum memiliki transaksi:
+
+-   `stock_ins`;
+-   `stock_outs`;
+-   `stock_opnames`.
+
+### BR-07 - Penghapusan pemasok
+
+Pemasok hanya dapat dihapus jika belum digunakan pada `stock_ins`.
+
+### BR-08 - Aksi Admin
+
+Aksi berikut hanya dapat dilakukan Admin:
+
+-   menghapus barang;
+-   menghapus pemasok;
+-   membatalkan barang masuk;
+-   membatalkan barang keluar.
+
+### BR-09 - Perubahan stok terpusat
+
+Perubahan stok harus menggunakan `App\Services\StockService`.
+
+Controller tidak boleh memiliki implementasi stok yang terpisah-pisah.
+
+------------------------------------------------------------------------
+
+## 8. Model Data
+
+### 8.1 Entitas
+
+``` text
+users
+items
+suppliers
+stock_ins
+stock_outs
+stock_opnames
+```
+
+### 8.2 Relasi
+
+``` text
+users      1 ─── N stock_ins
+users      1 ─── N stock_outs
+users      1 ─── N stock_opnames
+
+suppliers  1 ─── N stock_ins
+
+items      1 ─── N stock_ins
+items      1 ─── N stock_outs
+items      1 ─── N stock_opnames
+```
+
+ERD lengkap tersedia pada:
+
+``` text
+docs/ERD.mermaid
+```
+
+### 8.3 `items`
+
+  Field        Tipe            Aturan
+  ------------ --------------- ---------------
+  id           BIGINT          PK
+  code         VARCHAR(30)     unique, wajib
+  name         VARCHAR(150)    wajib
+  category     VARCHAR(80)     wajib
+  unit         VARCHAR(20)     wajib
+  buy_price    DECIMAL(12,2)   \>= 0
+  sell_price   DECIMAL(12,2)   \>= 0
+  stock        INT             \>= 0
+  min_stock    INT             \>= 0
+  created_at   TIMESTAMP       Laravel
+  updated_at   TIMESTAMP       Laravel
+
+### 8.4 `suppliers`
+
+  Field        Tipe           Aturan
+  ------------ -------------- ----------
+  id           BIGINT         PK
+  name         VARCHAR(150)   wajib
+  phone        VARCHAR(20)    nullable
+  email        VARCHAR(100)   nullable
+  address      TEXT           nullable
+  created_at   TIMESTAMP      Laravel
+  updated_at   TIMESTAMP      Laravel
+
+### 8.5 `stock_ins`
+
+  Field         Tipe            Aturan
+  ------------- --------------- --------------
+  id            BIGINT          PK
+  item_id       BIGINT          FK
+  supplier_id   BIGINT          FK
+  user_id       BIGINT          FK
+  date          DATE            \<= hari ini
+  quantity      INT             \> 0
+  buy_price     DECIMAL(12,2)   \>= 0
+  note          VARCHAR(255)    nullable
+
+### 8.6 `stock_outs`
+
+  Field      Tipe           Aturan
+  ---------- -------------- -----------------------------------
+  id         BIGINT         PK
+  item_id    BIGINT         FK
+  user_id    BIGINT         FK
+  date       DATE           \<= hari ini
+  quantity   INT            \> 0
+  reason     ENUM           terjual/rusak/kedaluwarsa/lainnya
+  note       VARCHAR(255)   nullable
+
+### 8.7 `stock_opnames`
+
+  Field            Tipe           Aturan
+  ---------------- -------------- ----------------
+  id               BIGINT         PK
+  item_id          BIGINT         FK
+  user_id          BIGINT         FK
+  date             DATE           \<= hari ini
+  system_stock     INT            stok sistem
+  physical_stock   INT            \>= 0
+  difference       INT            fisik - sistem
+  note             VARCHAR(255)   nullable
+
+------------------------------------------------------------------------
+
+## 9. Logika Laporan
+
+Sistem menggunakan pendekatan perhitungan mundur dari stok saat ini.
+
+Untuk periode laporan:
+
+``` text
+mutasi periode =
+    barang masuk
+    - barang keluar
+    + penyesuaian opname
+```
+
+Stok akhir periode dihitung dari stok saat ini dengan mengurangi mutasi
+setelah periode:
+
+``` text
+stok akhir =
+    stok saat ini
+    - mutasi setelah periode
+```
+
+Kemudian:
+
+``` text
+stok awal =
+    stok akhir
+    - mutasi periode
+```
+
+Validasi utama:
+
+``` text
+stok awal
++ masuk
+- keluar
++ penyesuaian opname
+= stok akhir
+```
+
+Implementasi laporan saat ini menggunakan `ReportController`.
+
+------------------------------------------------------------------------
+
+## 10. Halaman dan Route
+
+  Halaman           Route                Prioritas
+  ----------------- -------------------- -----------
+  Login             `/login`             P0
+  Dashboard         `/dashboard`         P0
+  Barang            `/items`             P0
+  Pemasok           `/suppliers`         P0
+  Barang Masuk      `/stock-ins`         P0
+  Barang Keluar     `/stock-outs`        P0
+  Stok Opname       `/stock-opnames`     P0
+  Stok Menipis      `/low-stock`         P0
+  Laporan Harian    `/reports/daily`     P0
+  Laporan Bulanan   `/reports/monthly`   P0
+
+------------------------------------------------------------------------
+
+## 11. UX dan UI
+
+Dokumen visual utama:
+
+``` text
+docs/DESIGN.md
+```
+
+Prinsip wajib:
+
+-   sederhana;
+-   whitespace cukup;
+-   tidak menggunakan gradient;
+-   tidak menggunakan glassmorphism;
+-   tidak menggunakan shadow berlebihan;
+-   menggunakan Bahasa Indonesia;
+-   warna primer `#2563EB`;
+-   teks utama `#111111`;
+-   teks sekunder `#6B7280`;
+-   border `#E5E7EB`;
+-   font utama Poppins;
+-   status selalu memiliki label teks, bukan hanya warna.
+
+### Responsiveness
+
+  Lebar         Perilaku
+  ------------- -----------------------------------------------------
+  \>= 1024px    Sidebar penuh
+  768--1023px   Sidebar dapat dibuka/tutup
+  \< 768px      Layout satu kolom, tabel dapat di-scroll horizontal
+
+------------------------------------------------------------------------
+
+## 12. Acceptance Criteria
+
+Fitur baseline dianggap memenuhi PRD jika:
+
+### Autentikasi
+
+-   [ ] Pengguna dapat login dengan kredensial valid.
+-   [ ] Kredensial invalid ditolak.
+-   [ ] Pengguna anonim tidak dapat mengakses dashboard.
+-   [ ] Logout mengakhiri session.
+
+### Barang
+
+-   [ ] Barang dapat ditambahkan dengan stok awal.
+-   [ ] Kode barang harus unik.
+-   [ ] Barang dapat dicari dan difilter.
+-   [ ] Barang yang memiliki transaksi tidak dapat dihapus.
+-   [ ] Stok tidak dapat diedit langsung setelah barang dibuat.
+
+### Pemasok
+
+-   [ ] Pemasok dapat ditambah dan diubah.
+-   [ ] Pemasok dapat dicari.
+-   [ ] Pemasok yang memiliki transaksi tidak dapat dihapus.
+
+### Barang masuk
+
+-   [ ] Transaksi valid menambah stok sesuai jumlah.
+-   [ ] Jumlah 0 atau negatif ditolak.
+-   [ ] Admin dapat membatalkan transaksi.
+-   [ ] Pembatalan tidak menghasilkan stok negatif.
+
+### Barang keluar
+
+-   [ ] Transaksi valid mengurangi stok sesuai jumlah.
+-   [ ] Jumlah melebihi stok ditolak.
+-   [ ] Stok tidak berubah ketika transaksi ditolak.
+-   [ ] Admin dapat membatalkan transaksi.
+
+### Stok opname
+
+-   [ ] Sistem menampilkan stok sistem.
+-   [ ] Pengguna dapat memasukkan stok fisik.
+-   [ ] Selisih dihitung dengan rumus fisik - sistem.
+-   [ ] Stok berubah menjadi stok fisik setelah konfirmasi.
+-   [ ] Riwayat opname tersimpan.
+
+### Stok menipis
+
+-   [ ] `stock <= min_stock` muncul pada daftar.
+-   [ ] Stok 0 diberi status Habis.
+-   [ ] Dashboard menampilkan barang menipis.
+
+### Laporan
+
+-   [ ] Laporan harian dapat memilih tanggal.
+-   [ ] Laporan bulanan dapat memilih bulan dan tahun.
+-   [ ] Laporan menampilkan stok awal, masuk, keluar, penyesuaian, dan
+    stok akhir.
+-   [ ] Persamaan stok tetap konsisten.
+
+### Database
+
+-   [ ] `php artisan migrate:fresh --seed` dapat membangun database
+    development dari awal.
+-   [ ] Seeder menghasilkan akun demo dan data contoh.
+-   [ ] Foreign key dan aturan integritas berjalan sesuai migration.
+
+------------------------------------------------------------------------
+
+## 13. Data Seed Development
+
+Seeder development menyediakan:
+
+### Admin
+
+``` text
+Email    : admin@inventaris.test
+Password : password
+Role     : admin
+```
+
+### Staf
+
+``` text
+Email    : staf@inventaris.test
+Password : password
+Role     : staff
+```
+
+Kredensial ini hanya untuk development/demo.
+
+------------------------------------------------------------------------
+
+## 14. Arsitektur Teknis
+
+### Backend
+
+``` text
+routes/web.php
+      │
+      ▼
+Controllers
+      │
+      ├── validation
+      │
+      ▼
+StockService (untuk perubahan stok)
+      │
+      ▼
+Eloquent Models
+      │
+      ▼
+MySQL
+```
+
+### Prinsip implementasi
+
+1.  Controller mengatur HTTP request/response.
+2.  Model merepresentasikan data dan relasi.
+3.  `StockService` mengelola perubahan stok.
+4.  Migration menjadi sumber struktur database.
+5.  Seeder menjadi sumber data development.
+6.  Blade menangani presentation layer.
+7.  Validasi dilakukan di server.
+
+------------------------------------------------------------------------
+
+## 15. Definition of Done
+
+Sebuah fitur dianggap selesai jika:
+
+-   [ ] Kebutuhan fitur sudah sesuai PRD.
+-   [ ] Implementasi mengikuti arsitektur Laravel project.
+-   [ ] Validasi input tersedia.
+-   [ ] Aturan bisnis terkait sudah diterapkan.
+-   [ ] UI mengikuti `docs/DESIGN.md`.
+-   [ ] Tidak ada secret yang di-commit.
+-   [ ] Pengujian manual fitur berhasil.
+-   [ ] Automated test dibuat jika fitur memiliki business logic kritis.
+-   [ ] Dokumentasi diperbarui jika ada perubahan behavior.
+-   [ ] Pull Request telah direview minimal oleh anggota tim lain.
+-   [ ] Tidak ada perubahan langsung ke `main` tanpa review.
+
+------------------------------------------------------------------------
+
+## 16. Dokumentasi yang Berkaitan
+
+  Dokumen              Fokus
+  -------------------- ----------------------------------------------
+  `README.md`          Setup, penggunaan, struktur, troubleshooting
+  `docs/PRD.md`        Requirement produk dan acceptance criteria
+  `docs/DESIGN.md`     UI/UX dan design system
+  `docs/ERD.mermaid`   ERD dan relasi database
+  `CONTRIBUTING.md`    Workflow Git, branch, commit, PR, review
