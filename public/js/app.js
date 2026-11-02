@@ -1,4 +1,3 @@
-/* Sistem Manajemen Inventaris Barang: JavaScript ringan tanpa library. */
 document.addEventListener('DOMContentLoaded', function () {
   /* ---------- Sidebar (tablet / mobile) ---------- */
   var sidebar = document.getElementById('sidebar');
