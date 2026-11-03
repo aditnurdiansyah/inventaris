@@ -87,8 +87,4 @@
             </tbody>
         </table>
     </div>
-
-    <p class="muted small" style="margin-top: var(--space-4)">
-        Stok akhir = stok awal + masuk - keluar + penyesuaian opname. Penyesuaian opname adalah selisih antara stok fisik dan stok sistem pada saat opname.
-    </p>
 @endsection
